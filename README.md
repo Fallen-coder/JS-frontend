@@ -74,3 +74,7 @@ authorization is done via post policy.
 generate comment resource that belongs to post resource.
 nested routes for comments needed.
 comments belongs to post and user.
+
+now I need to add post status change option.
+there needs to be a separate table for post statuses
+initially I need only two statuses: private and public

@@ -72,4 +72,12 @@ class PostController extends Controller implements HasMiddleware
         $post->delete();
         return ['message' => "The post ($post->id) has been deleted"];
     }
+
+    public function updateStatus(Request $request, Post $post)
+    {
+        Gate::authorize('modify', $post);
+        $request->validate(['post_status_id' => 'required|exists:post_statuses,id']);
+        $post->update(['post_status_id' => $request->post_status_id]);
+        return response()->json($post->load('status'));
+    }
 }

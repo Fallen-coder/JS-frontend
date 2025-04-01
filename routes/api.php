@@ -11,6 +11,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::apiResource('posts', PostController::class);
+Route::patch('posts/{post}/status', [PostController::class, 'updateStatus']);
 Route::apiResource('posts.comments', CommentController::class);
 
 Route::post('/register', [AuthController::class, 'register']);
