@@ -34,6 +34,11 @@ class CommentController extends Controller implements HasMiddleware
         return response()->json($comment, 201);
     }
 
+    public function show(Post $post, Comment $comment)
+    {
+        return response()->json($comment);
+    }
+
     public function destroy(Post $post, Comment $comment)
     {
         Gate::authorize('delete', $comment);
