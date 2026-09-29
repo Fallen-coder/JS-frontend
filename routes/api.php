@@ -20,16 +20,16 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
-    Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
-});
-
-// Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-//     // Admin-only routes
+// Route::middleware('auth:sanctum')->group(function () {
 //     Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
 //     Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
 // });
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Admin-only routes
+    Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
+    Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
+});
 
 // Route::middleware(RoleMiddleware::class.':admin')->group(function (string $role) {
 //     // Admin-only routes
