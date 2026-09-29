@@ -581,3 +581,160 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fetchPosts();
 });
+
+/* =========================================================
+   SPINNER FUNKCIJAS (4. Uzdevums)
+   ========================================================= */
+
+function showLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <span>Ielādē datus...</span>
+        </div>
+    `;
+}
+
+function hideLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const loader = container.querySelector('.spinner-container');
+    if (loader) {
+        loader.remove();
+    }
+}
+
+/* =========================================================
+   METODE 1: FETCH API AR ASYNC/AWAIT (3. un 4. Uzdevums)
+   ========================================================= */
+
+async function fetchPostsAsync() {
+    const containerId = "posts-list";
+    showLoading(containerId); // Parāda loaderi
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
+            method: "GET",
+            headers: getHeaders(false),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP kļūda: ${response.status}`);
+        }
+
+        const posts = await response.json();
+        renderPosts(posts); // Attēlo datus ar DOM manipulācijām
+    } catch (error) {
+        console.error("Kļūda saņemot rakstus (Fetch):", error);
+        document.getElementById(containerId).innerHTML = `
+            <div class="empty-state">
+                <strong style="color: var(--danger)">Kļūda ielādējot datus</strong>
+            </div>
+        `;
+    } finally {
+        hideLoading(containerId);
+    }
+}
+
+/* =========================================================
+   METODE 2: XMLHTTPREQUEST (3. un 4. Uzdevums)
+   ========================================================= */
+
+function fetchPostsXHR() {
+    const containerId = "posts-list";
+    showLoading(containerId); // Parāda loaderi
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `${API_BASE_URL}/posts`, true);
+
+    // Pievieno nepieciešamās galvenes
+    const headers = getHeaders(false);
+    for (const key in headers) {
+        xhr.setRequestHeader(key, headers[key]);
+    }
+
+    xhr.onload = function () {
+        hideLoading(containerId);
+        if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+                const posts = JSON.parse(xhr.responseText);
+                renderPosts(posts); // Attēlo datus ar DOM manipulācijām
+            } catch (e) {
+                console.error("Kļūda apstrādājot JSON:", e);
+            }
+        } else {
+            console.error(`XHR Kļūda: ${xhr.status}`);
+            document.getElementById(containerId).innerHTML = `
+                <div class="empty-state">
+                    <strong style="color: var(--danger)">Kļūda ielādējot datus (XHR)</strong>
+                </div>
+            `;
+        }
+    };
+
+    xhr.onerror = function () {
+        hideLoading(containerId);
+        console.error("Tīkla kļūda izpildot XHR pieprasījumu.");
+    };
+
+    xhr.send();
+}
+
+/* =========================================================
+   DOM MANIPULĀCIJAS - DATU ATTĒLOŠANA (3. Uzdevums)
+   ========================================================= */
+
+function renderPosts(posts) {
+    const container = document.getElementById("posts-list");
+    container.innerHTML = ""; // Attīra konteineru pirms jaunu datu ielikšanas
+
+    if (!posts || !posts.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <strong>Nav rakstu</strong>
+                <span>Izveidojiet pirmo rakstu.</span>
+            </div>
+        `;
+        return;
+    }
+
+    // Izmanto DOM manipulācijas, lai dinamiski izveidotu elementus
+    posts.forEach((post) => {
+        const div = document.createElement("div");
+        div.className = "post-card";
+
+        div.innerHTML = `
+            <h3>
+                ${escapeHtml(post.title)}
+                <small>ID: ${post.id}</small>
+            </h3>
+            <p>${escapeHtml(post.body)}</p>
+            <button class="btn-danger" onclick="deletePost(${post.id})">
+                Dzēst rakstu
+            </button>
+
+            <div class="comments-section">
+                <h4>KOMENTĀRI</h4>
+                <div id="comments-${post.id}">
+                    <i>Ielādē komentārus...</i>
+                </div>
+                <div class="comment-input-group">
+                    <input type="text" id="comment-input-${post.id}" placeholder="Rakstīt komentāru...">
+                    <button onclick="addComment(${post.id})">Pievienot</button>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(div);
+        fetchComments(post.id);
+    });
+}
+
+/* Nometnes/Ielādes sākumpunkts */
+document.addEventListener("DOMContentLoaded", () => {
+    updateAuthUI();
+    fetchPostsAsync(); // Noklusējuma ielāde ar Async/Await
+});
