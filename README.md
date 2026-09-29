@@ -1,84 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A small REST API for a blog, built with Laravel 13 and Sanctum token auth. Users register and log in, write posts, comment on posts, and can be given roles.
 
-## About Laravel
+## Data
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Table | What it holds |
+|-------|---------------|
+| `users` | Accounts (name, email, password) |
+| `posts` | Belong to a user; have a title, a body and a status |
+| `post_statuses` | `1 = public`, `2 = private` (inserted by the migration) |
+| `comments` | Belong to a post and a user; have content |
+| `roles` | `guest`, `admin` |
+| `role_user` | Which users have which roles |
 
--   [Simple, fast routing engine](https://laravel.com/docs/routing).
--   [Powerful dependency injection container](https://laravel.com/docs/container).
--   Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
--   Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
--   Database agnostic [schema migrations](https://laravel.com/docs/migrations).
--   [Robust background job processing](https://laravel.com/docs/queues).
--   [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Only the owner of a post can update it, delete it or change its status. Only the author of a comment can delete it.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Seed data
 
-## Learning Laravel
+`php artisan db:seed` creates:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **admin@example.com** (role `admin`) and **test@example.com** (role `guest`)
+- 5 more random users
+- 3 posts per user (21 total), roughly every third one private
+- 0–4 random comments per post
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Every seeded user's password is `password`.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Setup
 
-## Laravel Sponsors
+Requires PHP 8.3+ and Composer. SQLite is the default database.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+php artisan serve
+```
 
-### Premium Partners
+The API is then at `http://localhost:8000/api`.
 
--   **[Vehikl](https://vehikl.com/)**
--   **[Tighten Co.](https://tighten.co)**
--   **[WebReinvent](https://webreinvent.com/)**
--   **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
--   **[64 Robots](https://64robots.com)**
--   **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
--   **[Cyber-Duck](https://cyber-duck.co.uk)**
--   **[DevSquad](https://devsquad.com/hire-laravel-developers)**
--   **[Jump24](https://jump24.co.uk)**
--   **[Redberry](https://redberry.international/laravel/)**
--   **[Active Logic](https://activelogic.com)**
--   **[byte5](https://byte5.de)**
--   **[OP.GG](https://op.gg)**
+To wipe and reseed later:
 
-## Contributing
+```bash
+php artisan migrate:fresh --seed
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Tests
 
-## Code of Conduct
+```bash
+php artisan test
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Endpoints
 
-## Security Vulnerabilities
+Routes marked 🔒 need an `Authorization: Bearer <token>` header. Get a token from `/login`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Method | Path | |
+|--------|------|---|
+| POST | `/register` | Create an account, returns a token |
+| POST | `/login` | Returns a token |
+| POST | `/logout` | 🔒 Revoke the current token |
+| GET | `/user` | 🔒 The logged-in user |
+| GET | `/posts` | List posts |
+| GET | `/posts/{post}` | Show a post |
+| POST | `/posts` | 🔒 Create a post |
+| PUT/PATCH | `/posts/{post}` | 🔒 Update your post |
+| DELETE | `/posts/{post}` | 🔒 Delete your post |
+| PATCH | `/posts/{post}/status` | 🔒 Set `post_status_id` on your post |
+| GET | `/posts/{post}/comments` | List a post's comments |
+| GET | `/posts/{post}/comments/{comment}` | 🔒 Show a comment |
+| POST | `/posts/{post}/comments` | 🔒 Add a comment |
+| DELETE | `/posts/{post}/comments/{comment}` | 🔒 Delete your comment |
+| POST | `/users/{user}/assign-role` | 🔒 Give a user a role (`role_id`) |
+| POST | `/users/{user}/remove-role` | 🔒 Take a role away (`role_id`) |
 
-## License
+Example:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Chatbot texts
-
-I have laravel api application with sanctum.
-user can register and get a token to create posts with it.
-user who owns the post can update and delete it.
-authorization is done via post policy.
-generate comment resource that belongs to post resource.
-nested routes for comments needed.
-comments belongs to post and user.
-
-now I need to add post status change option.
-there needs to be a separate table for post statuses
-initially I need only two statuses: private and public
-
-I want to add role management to this app.
-user and role models are connected with pivot table.
-I need to at least two roles that are no hierarchical like guest and admin but that do not completely overlap so that that I can add both roles to some user
+```bash
+curl -X POST http://localhost:8000/api/login \
+  -H "Accept: application/json" \
+  -d email=admin@example.com -d password=password
+```
